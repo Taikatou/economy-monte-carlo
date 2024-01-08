@@ -89,6 +89,13 @@ class ContextualBandit:
         new_q_value = current_q_value + learning_rate * (reward - current_q_value)
         self.q_table[state, arm] = new_q_value
 
+    def update_total_reward(self, reward):
+        # Update the recent rewards list
+        self.recent_rewards.append(reward)
+        if len(self.recent_rewards) >= 30:
+            # If there are at least 30 rewards, calculate the average
+            self.avg_rewards.append(np.mean(self.recent_rewards[-30:]))
+
 config = {  # Configuration 1
     0: {0: 0.25, 1: 0.5, 2: 0.25, 3: 0.0, 4: 0.0},  # Forest
     1: {0: 0.25, 1: 0.30, 2: 0.30, 3: 0.15, 4: 0.0},  # Mountain
@@ -101,7 +108,6 @@ bandit = ContextualBandit(config)
 epochs = 1000
 
 for e in range(epochs):
-    print(e)
     context = bandit.context_sampling()
     contexts = []
     reward = 0
@@ -114,7 +120,6 @@ for e in range(epochs):
         contexts.append(context)
         context = bandit.new_context
 
-    print(reward)
     for c in contexts:
         bandit.update_q_table(c, arm, reward)
     # bandit.update_regret(arm, context)
@@ -146,7 +151,6 @@ sword_requirements = {
 }
 
 results = run_simulation_for_selected_swords(sword_requirements, bandit, adjusted_prices, adjusted_budget, max_iterations)
-print(results)
 
 # Print or analyze the results
 # Note: The print statement is for demonstration purposes; actual analysis may vary

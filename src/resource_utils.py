@@ -1,6 +1,6 @@
 from random import random
 import numpy as np
-
+import pandas as pd
 
 def generate_variable_market_resources(probabilities, prices, budget, max_iterations):
     resources = [resource for resource in probabilities.keys() if resource != 'none']
