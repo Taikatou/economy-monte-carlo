@@ -1,3 +1,7 @@
+from random import random
+import numpy as np
+
+
 def generate_variable_market_resources(probabilities, prices, budget, max_iterations):
     resources = [resource for resource in probabilities.keys() if resource != 'none']
     bought_counts = {resource: [0] for resource in resources}

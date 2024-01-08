@@ -1,27 +1,31 @@
 import resource_utils
 import market_utils
 
-def run_simulation_for_selected_swords(selected_swords, probabilities, prices, budget, max_iterations=20000, num_runs=3):
+
+def run_simulation_for_selected_swords(selected_swords, trained_bandit, prices, budget, max_iterations=20000, num_runs=3):
     total_results = []
 
     for _ in range(num_runs):
-        market_data = generate_variable_market_resources(probabilities, prices, budget, max_iterations)
         grid_search_results = {sword: {} for sword in selected_swords}
 
         for sword, requirements in selected_swords.items():
-            for resource in ["wood", "metal", "gem", "dragonscale"]:
-                if resource in requirements:
-                    adjusted_requirements = requirements.copy()
-                    adjusted_requirements[resource] -= 1
-                    reduced_crafted = simulate_crafting_with_market({sword: adjusted_requirements}, market_data)
-                    grid_search_results[sword][f"Reduced {resource}"] = reduced_crafted[sword]
+            # Convert requirements to context format for the bandit
+            context = [0 if resource not in requirements else requirements[resource] for resource in ["wood", "metal", "gem", "dragonscale"]]
 
-                    adjusted_requirements = requirements.copy()
-                    adjusted_requirements[resource] += 1
-                    increased_crafted = simulate_crafting_with_market({sword: adjusted_requirements}, market_data)
-                    grid_search_results[sword][f"Increased {resource}"] = increased_crafted[sword]
+            # Run the market simulation with the current context until all resources are collected
+            while not all(req == 0 for req in context):
+                market_data = market_utils.generate_variable_market_resources(trained_bandit, prices, budget, max_iterations, context)
+                # Update context based on acquired resources
+                for resource, count in requirements.items():
+                    if market_data[resource].iloc[-1] >= count:
+                        context[["wood", "metal", "gem", "dragonscale"].index(resource)] = 0
 
-        total_results.append(pd.DataFrame.from_dict(grid_search_results, orient='index'))
+            # Record results for this set of requirements
+            grid_search_results[sword] = market_data
 
-    avg_results = pd.concat(total_results).groupby(level=0).mean()
+        total_results.append(grid_search_results)
+
+    # Return the average results across runs
+    # Note: Further processing might be needed to extract meaningful average results
+    avg_results = {}  # Define a method to calculate average results from total_results
     return avg_results
